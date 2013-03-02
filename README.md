@@ -5,10 +5,6 @@ Requirements
 ------------
 
 * [Node.js](http://nodejs.org/)
-* [Npm](http://npmjs.org/)
-
-Modules:
-
 * [Express](http://expressjs.com/)
 * [Socket.io](http://socket.io/)
 
