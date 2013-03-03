@@ -6,8 +6,26 @@
 - posizione rispetto ad altri
 
 
--> checkWavesBounds
-
-last_wave_id start 0 / 1 -> array filter null
-
+- checkWavesBounds for complete grid
 - 2nd canvas buffer
+
+- all players must be ready to start
+- server side waves data structure management
+- wave can echo till the opposite side of grid
+
+1 | 2 | 3
+----------
+4 | 5 | 6
+----------
+7 | 8 | 9
+
+- swappable position http://james2doyle.github.com/zepto-dragswap/
+- can't swap to isolated position
+
+- make a damn init function
+- updateLobby(); only if visible
+
+- game statuses
+- generate canvas only after lobby, don't keep it hidden from start
+
+-> players / player bug

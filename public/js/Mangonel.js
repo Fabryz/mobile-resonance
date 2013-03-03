@@ -57,11 +57,24 @@
 			socket = new io.connect(window.location.href);
 
 		var canvas = $('#canvas'),
+			lobby = $('#lobby'),
 			ctx = canvas.get(0).getContext("2d"),
 			canvasWidth = canvas.width(),
 			canvasHeight = canvas.height();
 
 		var vp = new Viewport(canvasWidth, canvasHeight);
+
+		var updateLobby = function() {
+			lobby.attr({ width: $(window).innerWidth(), height: $(window).innerHeight() });
+			var list = lobby.find('ul#players'),
+				i = 0;
+
+			list.html('');
+			list.append("<li>"+ player.id +"</li>");
+			for (i in players) {
+				list.append("<li>"+ players[i].id +"</li>");
+			}
+		};
 
 		var resizeCanvas = function() {
 			canvasWidth = $(window).innerWidth();
@@ -393,6 +406,8 @@
 			debugLog('You have joined the server.');
 
 			// waves = waves.filter(function(){return true;}); // cleans null from array FIXME
+
+			updateLobby();
 		});
 
 		socket.on('quit', function(data) {
@@ -408,6 +423,7 @@
 			}
 
 			debugLog('Player quitted: '+ quitter +' (id '+ data.id +')');
+			updateLobby();
 		});
 
 		socket.on('newplayer', function(data) {
@@ -421,6 +437,8 @@
 			players.push(newPlayer);
 			debugLog('New player joined: '+ newPlayer.nick);
 			tmpPlayer = {};
+
+			updateLobby();
 		});
 
 		socket.on('playerlist', function(data) {
