@@ -1,7 +1,31 @@
 (function(exports) {
 
+	soundManager.setup({
+		url: '/swf/',
+		autoLoad: true,
+		autoPlay: false,
+		flashVersion: 9,
+		useFlashBlock: false,
+		onready: function() {
+			if (soundManager.supported()) {
+				// SM2 is ready to go!
+				soundManager.createSound({
+					id: 'bounce',
+					url: '/audio/bounce.ogg',
+					autoLoad: true,
+					autoPlay: false,
+					volume: 50
+				});
+			} else {
+				// unsupported/error case
+				console.log('error');
+			}
+		}
+	});
+
 	var Mangonel = function() {
-		var desiredFPS = 60,
+		var debug = true,
+			desiredFPS = 60,
 			allowSendEvery = 75,
 			isReady = true,
 			isPlaying = false,
@@ -23,6 +47,9 @@
 				backslash : 220
 			};
 
+		var last_wave_id = 0,
+			waves = [];
+
 		var player = new Player(),
 			players = [];
 
@@ -34,9 +61,6 @@
 			canvasWidth = canvas.width(),
 			canvasHeight = canvas.height();
 
-		ctx.fillStyle = 'rgb(0, 0, 0)';
-		ctx.font = "15px Monospace";
-
 		var vp = new Viewport(canvasWidth, canvasHeight);
 
 		var resizeCanvas = function() {
@@ -45,19 +69,22 @@
 
 			canvas.attr({ width: canvasWidth, height: canvasHeight });
 
+			ctx.fillStyle = 'rgb(0, 0, 0)';
+			ctx.font = "15px Monospace";
+
 			vp.setSize(canvasWidth, canvasHeight);
 		};
 
 		$(window).resize(resizeCanvas);
 		resizeCanvas();
 
-		var debug = function(msg) {
-			console.log(msg);
+		var debugLog = function(msg) {
+			console.log(new Date().toJSON() +": "+ msg);
 		};
 
 		var stop = function() {
 			isPlaying = false;
-			debug('* Mangonel stopped.');
+			debugLog('* Mangonel stopped.');
 		};
 
 		var toggleDebugPanel = function(spd) {
@@ -89,7 +116,7 @@
 
 		var start = function() {
 			if (isReady) {
-				debug('* Mangonel started.');
+				debugLog('* Mangonel started.');
 				isPlaying = true;
 
 				$(window).keydown(function(e) {
@@ -158,9 +185,9 @@
 
 				fps.init(fps_handle);
 
-				loop();
+				gameLoop();
 			} else {
-				debug('* Mangonel not ready.');
+				debugLog('* Mangonel not ready.');
 			}
 		};
 
@@ -254,11 +281,84 @@
 			//ctx.fillRect(coords.x, coords.y, p.width, p.height);
 		};
 
-		var loop = function() {
+		var isInsideCanvas = function(x, y) {
+			return !((x < 0) ||
+					(y < 0) ||
+					(x > canvasWidth) ||
+					(y > canvasHeight));
+		};
+
+		var checkWavesBounds = function() {
+			var i = 0;
+			for (i in waves) {
+				// if (waves[i].isActive) {
+
+					var diagonalBounds = waves[i].getDiagonalBounds(),
+						j = 0;
+					for (j in diagonalBounds) {
+
+						// DEBUG
+						ctx.beginPath();
+						ctx.arc(diagonalBounds[j].x, diagonalBounds[j].y, 5, 0, Math.PI * 2, false);
+						ctx.lineWidth = 3;
+						ctx.strokeStyle = 'blue';
+						ctx.stroke();
+
+						if (!isInsideCanvas(diagonalBounds[j].x, diagonalBounds[j].y)) {
+							soundManager.play('bounce');
+
+							// waves[i].isActive = false;
+							waves.splice(i, 1);
+
+							break;
+						}
+					}
+
+				// }
+
+			}
+		};
+
+		var createWave = function(options) {
+			options.id = last_wave_id;
+
+			waves.push(new Wave(options));
+
+			last_wave_id++;
+		};
+
+		$(canvas).bind("mousedown", function(e) {
+            mouseX = e.offsetX || e.layerX;
+            mouseY = e.offsetY || e.layerY;
+
+            createWave({ playerId: player.id, x: mouseX, y: mouseY, radius: 10 });
+
+            // console.log(mouseX, mouseY);
+        });
+
+		var drawWaves = function() {
+			var i = 0;
+			for (i in waves) {
+				// if (waves[i]) {
+				waves[i].draw(ctx);
+				// }
+			}
+		};
+
+		var growWaves = function() {
+			var i = 0;
+			for (i in waves) {
+				// if (waves[i]) {
+				waves[i].grow(1);
+				// }
+			}
+		};
+
+		var gameLoop = function() {
 			ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
 			if (isPlaying) {
-				sendMovement();
+				/*sendMovement();
 
 				vp.setCenter(player.x, player.y);
 
@@ -270,12 +370,16 @@
 					if (players[i].id != player.id) {
 						drawPlayer(players[i]);
 					}
-				}
+				}*/
+
+				growWaves();
+				checkWavesBounds();
+				drawWaves();
 
 				fps.count++;
 
-				requestAnimationFrame(loop);
-				//setTimeout(loop, desiredFPS); //debug
+				requestAnimationFrame(gameLoop);
+				//setTimeout(gameLoop, desiredFPS); //debug
 			}
 		};
 
@@ -285,8 +389,10 @@
 			player.x = data.player.x;
 			player.y = data.player.y;
 
-			debug('Received current player id: '+ player.id);
-			debug('You have joined the server.');
+			debugLog('Received current player id: '+ player.id);
+			debugLog('You have joined the server.');
+
+			// waves = waves.filter(function(){return true;}); // cleans null from array FIXME
 		});
 
 		socket.on('quit', function(data) {
@@ -301,7 +407,7 @@
 				}
 			}
 
-			debug('Player quitted: '+ quitter +' (id '+ data.id +')');
+			debugLog('Player quitted: '+ quitter +' (id '+ data.id +')');
 		});
 
 		socket.on('newplayer', function(data) {
@@ -313,7 +419,7 @@
 			newPlayer.lastMoveDir = data.player.lastMoveDir;
 
 			players.push(newPlayer);
-			debug('New player joined: '+ newPlayer.nick);
+			debugLog('New player joined: '+ newPlayer.nick);
 			tmpPlayer = {};
 		});
 
@@ -334,7 +440,7 @@
 				tmpPlayer = {};
 			}
 
-			debug('Initial player list received: '+ length +' players.');
+			debugLog('Initial player list received: '+ length +' players.');
 		});
 
 		socket.on('play', function(data) {
@@ -355,7 +461,7 @@
 
 		socket.on('ping', function(data) {
 			socket.emit('pong', { time: Date.now() });
-			//debug('Ping? Pong!');
+			//debugLog('Ping? Pong!');
 		});
 
 		socket.on('pingupdate', function(data) {
@@ -386,10 +492,10 @@
 			canvasWidth: canvasWidth,
 			canvasHeight: canvasHeight,
 
-			debug: debug,
+			debugLog: debugLog,
 			start: start,
 			stop: stop,
-			loop: loop,
+			gameLoop: gameLoop,
 			toggleDebugPanel: toggleDebugPanel
 		};
 	};

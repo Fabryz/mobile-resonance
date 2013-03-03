@@ -4,3 +4,10 @@
 - schermata lobby
 - propagazione azione da mobile
 - posizione rispetto ad altri
+
+
+-> checkWavesBounds
+
+last_wave_id start 0 / 1 -> array filter null
+
+- 2nd canvas buffer
