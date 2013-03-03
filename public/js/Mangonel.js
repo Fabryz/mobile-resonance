@@ -39,6 +39,18 @@
 
 		var vp = new Viewport(canvasWidth, canvasHeight);
 
+		var resizeCanvas = function() {
+			canvasWidth = $(window).innerWidth();
+			canvasHeight = $(window).innerHeight();
+
+			canvas.attr({ width: canvasWidth, height: canvasHeight });
+
+			vp.setSize(canvasWidth, canvasHeight);
+		};
+
+		$(window).resize(resizeCanvas);
+		resizeCanvas();
+
 		var debug = function(msg) {
 			console.log(msg);
 		};
@@ -50,7 +62,7 @@
 
 		var toggleDebugPanel = function(spd) {
 			var speed = spd || 'fast';
-			
+
 			debugPanel.stop();
 			debugPanel.fadeToggle(speed);
 			debugPanel.toggleClass("active");
@@ -63,23 +75,23 @@
 
 		var showScoreboard = function() {
 			var list = scoreboard.find('ul');
-		
+
 			list.html('');
 			var length = players.length;
 			for(var i = 0; i < length; i++) {
 				list.append("<li>"+ players[i] +"</li>");
 			}
-			
+
 			list.append("<li>&nbsp;</li>");
 			list.append("<li>Total players: "+ length +"</li>");
 			scoreboard.show();
-		}
+		};
 
 		var start = function() {
 			if (isReady) {
 				debug('* Mangonel started.');
 				isPlaying = true;
-				
+
 				$(window).keydown(function(e) {
 					//e.preventDefault();
 
@@ -107,16 +119,16 @@
 					}
 
 				});
-				
+
 				$(window).keypress(function(e) {
 					//e.preventDefault();
 					var keyCode = e.keyCode;
-				
+
 				});
 
 				$(window).keyup(function(e) {
 					//e.preventDefault();
-					
+
 					switch(e.keyCode) {
 						case keys.left:
 								player.moveLeft = false;
@@ -175,7 +187,7 @@
 				player.lastMoveDir = dir;
 
 				nowMove = Date.now();
-				if ((nowMove - player.lastMoveTime) > allowSendEvery) { 
+				if ((nowMove - player.lastMoveTime) > allowSendEvery) {
 					socket.emit('play', { id: player.id, dir: dir });
 					player.lastMoveTime = Date.now();
 				}
@@ -196,7 +208,7 @@
 		drawMapBounds = function() {
 			var coords = mapToVp(0, 0);
 
-			ctx.save()
+			ctx.save();
 			ctx.strokeStyle = "#AAA";
 			ctx.lineWidth = 8;
 			ctx.strokeRect(coords.x - 4, coords.y - 4, canvasWidth + 8, canvasHeight + 8);
@@ -244,8 +256,8 @@
 
 		var loop = function() {
 			ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-			
-			if (isPlaying) {			
+
+			if (isPlaying) {
 				sendMovement();
 
 				vp.setCenter(player.x, player.y);
@@ -257,22 +269,22 @@
 				for(var i = 0; i < length; i++) {
 					if (players[i].id != player.id) {
 						drawPlayer(players[i]);
-			    	}
+					}
 				}
-				
+
 				fps.count++;
 
 				requestAnimationFrame(loop);
 				//setTimeout(loop, desiredFPS); //debug
 			}
-		}
+		};
 
-		socket.on('join', function(data) {						
+		socket.on('join', function(data) {
 			player.id = data.player.id;
 			player.nick = data.player.nick;
 			player.x = data.player.x;
 			player.y = data.player.y;
-			
+
 			debug('Received current player id: '+ player.id);
 			debug('You have joined the server.');
 		});
@@ -288,28 +300,28 @@
 					break;
 				}
 			}
-			
+
 			debug('Player quitted: '+ quitter +' (id '+ data.id +')');
 		});
 
-		socket.on('newplayer', function(data) {	
+		socket.on('newplayer', function(data) {
 			var newPlayer = new Player();
 			newPlayer.id = data.player.id;
 			newPlayer.nick = data.player.nick;
 			newPlayer.x = data.player.x;
 			newPlayer.y = data.player.y;
 			newPlayer.lastMoveDir = data.player.lastMoveDir;
-		
+
 			players.push(newPlayer);
 			debug('New player joined: '+ newPlayer.nick);
 			tmpPlayer = {};
 		});
-		
-		socket.on('playerlist', function(data) {				
+
+		socket.on('playerlist', function(data) {
 			players = []; //prepare for new list
 
 			var length = data.list.length;
-			for(var i = 0; i < length; i++) {		
+			for(var i = 0; i < length; i++) {
 				var tmpPlayer = new Player();
 				tmpPlayer.id = data.list[i].id;
 				tmpPlayer.nick = data.list[i].nick;
@@ -317,12 +329,12 @@
 				tmpPlayer.y = data.list[i].y;
 				tmpPlayer.lastMoveDir = data.list[i].lastMoveDir;
 				tmpPlayer.ping = data.list[i].ping;
-				
+
 				players.push(tmpPlayer);
 				tmpPlayer = {};
 			}
 
-			debug('Initial player list received: '+ length +' players.');	
+			debug('Initial player list received: '+ length +' players.');
 		});
 
 		socket.on('play', function(data) {
@@ -345,7 +357,7 @@
 			socket.emit('pong', { time: Date.now() });
 			//debug('Ping? Pong!');
 		});
-		
+
 		socket.on('pingupdate', function(data) {
 			var length = players.length;
 			for(var i = 0; i < length; i++) {

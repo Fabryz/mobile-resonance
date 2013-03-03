@@ -1,9 +1,11 @@
-body {
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
-  background-color: #DCECEC;
-  color: #333;
+* {
   margin: 0;
   padding: 0;
+}
+
+body {
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  overflow: hidden;
 }
 
 a {
@@ -15,13 +17,12 @@ a {
 }
 
 #wrapper {
-	padding: 0;
-	padding-top: 30px;
-	padding-left: 50px;
+	position: relative;
 }
 
 h1 {
 	color: #3CAEC2;
+	display: none;
 }
 
 #debug {
@@ -30,7 +31,7 @@ h1 {
 	right: 10px;
 	bottom: 0;
 	background-color: #FFFFDD;
-	border: 0px solid #CCC;
+	border: 0 solid #CCC;
 	border-bottom: none;
 	padding: 10px;
 	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
@@ -46,6 +47,9 @@ h1 {
 }
 
 #canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
 	background-color: #CCC;
 }
 
