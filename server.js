@@ -19,11 +19,11 @@ app.configure(function(){
 });
 
 app.configure('development', function(){
-	app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
+	app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
 app.configure('production', function(){
-	app.use(express.errorHandler()); 
+	app.use(express.errorHandler());
 });
 
 // Routes
@@ -42,20 +42,20 @@ console.log("* Express server listening in %s mode", app.settings.env);
 var	io = require('socket.io').listen(app),
 	Player = require('./public/js/Player.js').Player,
 	players = [],
- 	totPlayers = 0,
- 	pings = [],
- 	pingInterval = null,
- 	pingEvery = 5000;
-	
-io.configure(function() { 
+	totPlayers = 0,
+	pings = [],
+	pingInterval = null,
+	pingEvery = 5000;
+
+io.configure(function() {
 	io.enable('browser client minification');
-	io.set('log level', 1); 
-}); 
+	io.set('log level', 1);
+});
 
 var serverConfig = {
 	maxPlayers: 32,
 	speed: 20,
-	spawnX: 100,	
+	spawnX: 100,
 	spawnY: 100,
 	mapWidth: 512,
 	mapHeight: 512
@@ -63,7 +63,7 @@ var serverConfig = {
 
 function getPlayerFromId(id) {
 	var length = players.length;
-	for(var i = 0; i < length; i++) { 
+	for(var i = 0; i < length; i++) {
 		if (players[i].id == id) {
 			return players[i];
 		}
@@ -74,10 +74,10 @@ function getPlayerFromId(id) {
 function newPlayer(client) {
 	p = new Player(client.id, serverConfig.spawnX, serverConfig.spawnY);
 	players.push(p);
-	
+
     client.emit('join', { player: p });
 	client.broadcast.emit('newplayer', { player: p });
-	
+
 	console.log('+ New player: '+ p.nick);
 }
 
@@ -110,7 +110,7 @@ function checkMapBounds(x, y, width, height) {
 	};
 }
 
-// Elaborate next position, send confirmed position to client 
+// Elaborate next position, send confirmed position to client
 function sendGameData(client, data) {
 	var oldMove = {},
 		nextMove = {},
@@ -122,7 +122,7 @@ function sendGameData(client, data) {
 
 			oldMove.x = players[i].x;
 			oldMove.y = players[i].y;
-			
+
 			switch(data.dir) { // calculate player's next position
 				case 'l':
 						nextMove.x = oldMove.x - serverConfig.speed;
@@ -147,7 +147,7 @@ function sendGameData(client, data) {
 
 			// Check if he's going out of bounds
 			// if so set him to a safe position on the edge
-			safeMove = checkMapBounds(nextMove.x, nextMove.y, players[i].width, players[i].height)
+			safeMove = checkMapBounds(nextMove.x, nextMove.y, players[i].width, players[i].height);
 			nextMove.x = safeMove.x;
 			nextMove.y = safeMove.y;
 
@@ -158,10 +158,10 @@ function sendGameData(client, data) {
 			io.sockets.emit('play', { id: players[i].id , x: nextMove.x, y: nextMove.y, dir: data.dir });
 			break;
 		}
-	}	
+	}
 }
 
-// ping is intended as server -> client -> server time	
+// ping is intended as server -> client -> server time
 function pingClients() {
 	var length = players.length;
 	for(var i = 0; i < length; i++) {
@@ -174,7 +174,7 @@ function pingClients() {
 }
 
 var game = io.sockets.on('connection', function(client) {
-	newPlayer(client);	
+	newPlayer(client);
 	sendPlayerList(client);
 
 	totPlayers++;
@@ -192,7 +192,7 @@ var game = io.sockets.on('connection', function(client) {
 		sendGameData(client, data);
 	});
 
-	client.on('pong', function(data) {		
+	client.on('pong', function(data) {
 		pings[client.id] = { ping: (Date.now() - pings[client.id].time) };
 
 		var length = players.length;
@@ -203,7 +203,7 @@ var game = io.sockets.on('connection', function(client) {
 			}
 		}
 
-		//console.log('Pong! '+ client.id +' '+ pings[client.id].ping +'ms'); //log filler
+		console.log('Pong! '+ client.id +' '+ pings[client.id].ping +'ms'); //log filler
 
 		//broadcast confirmed player ping
 		game.emit('pingupdate', { id: client.id, ping: pings[client.id].ping });
@@ -211,7 +211,7 @@ var game = io.sockets.on('connection', function(client) {
 
 	client.on('disconnect', function() {
 		var quitter = '';
-		
+
 		var length = players.length;
 		for(var i = 0; i < length; i++) {
 			if (players[i].id == client.id) {
@@ -226,7 +226,7 @@ var game = io.sockets.on('connection', function(client) {
 		io.sockets.emit('tot', { tot: totPlayers });
 		console.log('- Player '+ quitter +' ('+ client.id +') disconnected, total players: '+ totPlayers);
 
-		if (totPlayers == 0) {
+		if (totPlayers === 0) {
 			clearTimeout(pingInterval);
 			pingInterval = null;
 		}
